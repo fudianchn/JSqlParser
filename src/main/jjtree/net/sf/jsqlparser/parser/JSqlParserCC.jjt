@@ -7812,13 +7812,16 @@ Expression Condition():
 {
     Expression result;
     Expression left;
-    boolean not = false;
-    boolean exclamationMarkNot = false;
+    // Leading NOT / ! prefixes, leftmost token wraps outermost (issue #1170).
+    final Deque<Boolean> exclamationMarks = new ArrayDeque<Boolean>();
     int oraclePrior = EqualsTo.NO_ORACLE_PRIOR;
     int oracleJoin = EqualsTo.NO_ORACLE_JOIN;
 }
 {
-    [ LOOKAHEAD(2, { getToken(1).kind == K_NOT || "!".equals(getToken(1).image) }) (<K_NOT> { not=true; } | "!" { not=true; exclamationMarkNot=true; })]
+    (
+        LOOKAHEAD({ getToken(1).kind == K_NOT || "!".equals(getToken(1).image) })
+        ( <K_NOT> { exclamationMarks.addFirst(Boolean.FALSE); } | "!" { exclamationMarks.addFirst(Boolean.TRUE); } )
+    )*
     (
         result=ExistsExpression()
         |
@@ -7863,7 +7866,10 @@ Expression Condition():
                 && result instanceof SupportsOldOracleJoinSyntax) {
             ((SupportsOldOracleJoinSyntax) result).setOraclePriorPosition(oraclePrior);
         }
-        return not ? new NotExpression(result, exclamationMarkNot) : result;
+        while (!exclamationMarks.isEmpty()) {
+            result = new NotExpression(result, exclamationMarks.pollFirst());
+        }
+        return result;
     }
 }
 
