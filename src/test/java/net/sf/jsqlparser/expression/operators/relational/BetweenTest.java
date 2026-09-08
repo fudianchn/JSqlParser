@@ -10,6 +10,7 @@
 package net.sf.jsqlparser.expression.operators.relational;
 
 import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.test.TestUtils;
 import org.junit.jupiter.api.Assertions;
@@ -49,5 +50,79 @@ class BetweenTest {
 
         Assertions.assertFalse(between.isUsingSymmetric());
         Assertions.assertTrue(between.isUsingAsymmetric());
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxOnBothOperandsIssue672() throws JSQLParserException {
+        String sqlStr =
+                "SELECT * FROM table1 t1, table2 t2 WHERE t1.col1 BETWEEN t2.col2(+) AND t2.col3(+)";
+        PlainSelect select = (PlainSelect) TestUtils.assertSqlCanBeParsedAndDeparsed(sqlStr, true);
+        Between between = (Between) select.getWhere();
+
+        assertEquals(EqualsTo.ORACLE_JOIN_RIGHT,
+                ((Column) between.getBetweenExpressionStart()).getOldOracleJoinSyntax());
+        assertEquals(EqualsTo.ORACLE_JOIN_RIGHT,
+                ((Column) between.getBetweenExpressionEnd()).getOldOracleJoinSyntax());
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxOnStartOperandIssue672() throws JSQLParserException {
+        TestUtils.assertSqlCanBeParsedAndDeparsed(
+                "SELECT * FROM table1 t1, table2 t2 WHERE t1.col1 BETWEEN t2.col2(+) AND 5", true);
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxOnEndOperandIssue672() throws JSQLParserException {
+        TestUtils.assertSqlCanBeParsedAndDeparsed(
+                "SELECT * FROM table1 t1, table2 t2 WHERE t1.col1 BETWEEN 1 AND t2.col3(+)", true);
+    }
+
+    @Test
+    void testNotBetweenWithOldOracleJoinSyntaxIssue672() throws JSQLParserException {
+        String sqlStr =
+                "SELECT * FROM table1 t1, table2 t2 WHERE t1.col1 NOT BETWEEN t2.col2(+) AND t2.col3(+)";
+        PlainSelect select = (PlainSelect) TestUtils.assertSqlCanBeParsedAndDeparsed(sqlStr, true);
+        Between between = (Between) select.getWhere();
+
+        assertTrue(between.isNot());
+        assertEquals(EqualsTo.ORACLE_JOIN_RIGHT,
+                ((Column) between.getBetweenExpressionStart()).getOldOracleJoinSyntax());
+        assertEquals(EqualsTo.ORACLE_JOIN_RIGHT,
+                ((Column) between.getBetweenExpressionEnd()).getOldOracleJoinSyntax());
+    }
+
+    @Test
+    void testBetweenSymmetricWithOldOracleJoinSyntaxIssue672() throws JSQLParserException {
+        TestUtils.assertSqlCanBeParsedAndDeparsed(
+                "SELECT * FROM t1, t2 WHERE t1.c BETWEEN SYMMETRIC t2.c(+) AND t2.d(+)", true);
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxInJoinOnClauseIssue672() throws JSQLParserException {
+        TestUtils.assertSqlCanBeParsedAndDeparsed(
+                "SELECT * FROM t1 JOIN t2 ON t1.c BETWEEN t2.c(+) AND t2.d(+)", true);
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxOnLeftOperand() throws JSQLParserException {
+        TestUtils.assertSqlCanBeParsedAndDeparsed(
+                "SELECT * FROM table1 t1, table2 t2 WHERE t2.col2(+) BETWEEN t1.col1 AND t1.col3",
+                true);
+    }
+
+    @Test
+    void testBetweenWithOldOracleJoinSyntaxBeforeComparisonSuffixOnOperand()
+            throws JSQLParserException {
+        // (+) directly followed by a comparison operator keeps the pre-existing
+        // RegularConditionRHS path, where the marker sits on the comparison itself
+        String sqlStr =
+                "SELECT * FROM t1, t2 WHERE t1.c BETWEEN t2.c(+) = 5 AND 1";
+        PlainSelect select = (PlainSelect) TestUtils.assertSqlCanBeParsedAndDeparsed(sqlStr, true);
+        Between between = (Between) select.getWhere();
+        EqualsTo comparison = (EqualsTo) between.getBetweenExpressionStart();
+
+        assertEquals(EqualsTo.ORACLE_JOIN_RIGHT, comparison.getOldOracleJoinSyntax());
+        assertEquals(EqualsTo.NO_ORACLE_JOIN,
+                ((Column) comparison.getLeftExpression()).getOldOracleJoinSyntax());
     }
 }

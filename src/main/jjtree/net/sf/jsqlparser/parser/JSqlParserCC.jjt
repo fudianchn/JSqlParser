@@ -8105,6 +8105,15 @@ Expression Between(Expression leftExpression) :
                 LOOKAHEAD({ isComparisonOperatorAhead() })
                 betweenExpressionStart = RegularConditionRHS(betweenExpressionStart, EqualsTo.NO_ORACLE_JOIN)
             ]
+            [
+                LOOKAHEAD("(" "+" ")")
+                "(" "+" ")"
+                {
+                    if (betweenExpressionStart instanceof Column) {
+                        ((Column) betweenExpressionStart).setOldOracleJoinSyntax(EqualsTo.ORACLE_JOIN_RIGHT);
+                    }
+                }
+            ]
         )
 
         <K_AND>
@@ -8115,6 +8124,15 @@ Expression Between(Expression leftExpression) :
             [
                 LOOKAHEAD({ isComparisonOperatorAhead() })
                 betweenExpressionEnd = RegularConditionRHS(betweenExpressionEnd, EqualsTo.NO_ORACLE_JOIN)
+            ]
+            [
+                LOOKAHEAD("(" "+" ")")
+                "(" "+" ")"
+                {
+                    if (betweenExpressionEnd instanceof Column) {
+                        ((Column) betweenExpressionEnd).setOldOracleJoinSyntax(EqualsTo.ORACLE_JOIN_RIGHT);
+                    }
+                }
             ]
         )
 
