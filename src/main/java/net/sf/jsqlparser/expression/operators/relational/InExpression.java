@@ -22,6 +22,8 @@ public class InExpression extends ASTNodeAccessImpl
     private Expression rightExpression;
     private int oldOracleJoinSyntax = NO_ORACLE_JOIN;
 
+    private int oraclePriorPosition = NO_ORACLE_PRIOR;
+
     public InExpression() {}
 
     public InExpression(Expression leftExpression, Expression rightExpression) {
@@ -94,6 +96,9 @@ public class InExpression extends ASTNodeAccessImpl
     @Override
     public String toString() {
         StringBuilder statementBuilder = new StringBuilder();
+        if (oraclePriorPosition == ORACLE_PRIOR_START) {
+            statementBuilder.append("PRIOR ");
+        }
         statementBuilder.append(getLeftExpressionString());
 
         statementBuilder.append(" ");
@@ -110,14 +115,12 @@ public class InExpression extends ASTNodeAccessImpl
 
     @Override
     public int getOraclePriorPosition() {
-        return SupportsOldOracleJoinSyntax.NO_ORACLE_PRIOR;
+        return oraclePriorPosition;
     }
 
     @Override
     public void setOraclePriorPosition(int priorPosition) {
-        if (priorPosition != SupportsOldOracleJoinSyntax.NO_ORACLE_PRIOR) {
-            throw new IllegalArgumentException("unexpected prior for oracle found");
-        }
+        this.oraclePriorPosition = priorPosition;
     }
 
     public InExpression withRightExpression(Expression rightExpression) {

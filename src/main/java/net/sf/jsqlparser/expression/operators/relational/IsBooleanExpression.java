@@ -13,7 +13,8 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.parser.ASTNodeAccessImpl;
 
-public class IsBooleanExpression extends ASTNodeAccessImpl implements Expression {
+public class IsBooleanExpression extends ASTNodeAccessImpl
+        implements Expression, SupportsOldOracleJoinSyntax {
 
     private Expression leftExpression;
     private boolean not = false;
@@ -50,10 +51,11 @@ public class IsBooleanExpression extends ASTNodeAccessImpl implements Expression
 
     @Override
     public String toString() {
+        String prior = oraclePriorPosition == ORACLE_PRIOR_START ? "PRIOR " : "";
         if (isTrue()) {
-            return leftExpression + " IS" + (not ? " NOT" : "") + " TRUE";
+            return prior + leftExpression + " IS" + (not ? " NOT" : "") + " TRUE";
         } else {
-            return leftExpression + " IS" + (not ? " NOT" : "") + " FALSE";
+            return prior + leftExpression + " IS" + (not ? " NOT" : "") + " FALSE";
         }
     }
 
@@ -75,4 +77,39 @@ public class IsBooleanExpression extends ASTNodeAccessImpl implements Expression
     public <E extends Expression> E getLeftExpression(Class<E> type) {
         return type.cast(getLeftExpression());
     }
+
+    private int oraclePriorPosition = NO_ORACLE_PRIOR;
+
+    @Override
+    public int getOldOracleJoinSyntax() {
+        return NO_ORACLE_JOIN;
+    }
+
+    @Override
+    public void setOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        throw new IllegalArgumentException(
+                "oracle join operator (+) is not supported on this condition");
+    }
+
+    @Override
+    public IsBooleanExpression withOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        setOldOracleJoinSyntax(oldOracleJoinSyntax);
+        return this;
+    }
+
+    @Override
+    public int getOraclePriorPosition() {
+        return oraclePriorPosition;
+    }
+
+    @Override
+    public void setOraclePriorPosition(int oraclePriorPosition) {
+        this.oraclePriorPosition = oraclePriorPosition;
+    }
+
+    public IsBooleanExpression withOraclePriorPosition(int oraclePriorPosition) {
+        setOraclePriorPosition(oraclePriorPosition);
+        return this;
+    }
+
 }

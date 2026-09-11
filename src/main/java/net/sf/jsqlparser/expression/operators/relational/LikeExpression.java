@@ -14,7 +14,7 @@ import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 
-public class LikeExpression extends BinaryExpression {
+public class LikeExpression extends BinaryExpression implements SupportsOldOracleJoinSyntax {
     private boolean not = false;
     private boolean useBinary = false;
     private Expression escapeExpression = null;
@@ -50,7 +50,8 @@ public class LikeExpression extends BinaryExpression {
 
     @Override
     public String toString() {
-        String retval = getLeftExpression() + " " + (not ? "NOT " : "")
+        String retval = (oraclePriorPosition == ORACLE_PRIOR_START ? "PRIOR " : "")
+                + getLeftExpression() + " " + (not ? "NOT " : "")
                 + (likeKeyWord == KeyWord.SIMILAR_TO ? "SIMILAR TO" : likeKeyWord) + " "
                 + (useBinary ? "BINARY " : "") + getRightExpression();
         if (escapeExpression != null) {
@@ -125,4 +126,39 @@ public class LikeExpression extends BinaryExpression {
                     keyword.toUpperCase(Locale.ROOT).replaceAll("\\s+", "_"));
         }
     }
+
+    private int oraclePriorPosition = NO_ORACLE_PRIOR;
+
+    @Override
+    public int getOldOracleJoinSyntax() {
+        return NO_ORACLE_JOIN;
+    }
+
+    @Override
+    public void setOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        throw new IllegalArgumentException(
+                "oracle join operator (+) is not supported on this condition");
+    }
+
+    @Override
+    public LikeExpression withOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        setOldOracleJoinSyntax(oldOracleJoinSyntax);
+        return this;
+    }
+
+    @Override
+    public int getOraclePriorPosition() {
+        return oraclePriorPosition;
+    }
+
+    @Override
+    public void setOraclePriorPosition(int oraclePriorPosition) {
+        this.oraclePriorPosition = oraclePriorPosition;
+    }
+
+    public LikeExpression withOraclePriorPosition(int oraclePriorPosition) {
+        setOraclePriorPosition(oraclePriorPosition);
+        return this;
+    }
+
 }

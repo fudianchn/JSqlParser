@@ -16,7 +16,7 @@ import net.sf.jsqlparser.parser.ASTNodeAccessImpl;
 /**
  * A "BETWEEN" expr1 expr2 statement
  */
-public class Between extends ASTNodeAccessImpl implements Expression {
+public class Between extends ASTNodeAccessImpl implements Expression, SupportsOldOracleJoinSyntax {
 
     private Expression leftExpression;
     private boolean not = false;
@@ -82,7 +82,8 @@ public class Between extends ASTNodeAccessImpl implements Expression {
 
     @Override
     public String toString() {
-        return leftExpression + " " + (not ? "NOT " : "") + "BETWEEN "
+        return (oraclePriorPosition == ORACLE_PRIOR_START ? "PRIOR " : "") + leftExpression + " "
+                + (not ? "NOT " : "") + "BETWEEN "
                 + (usingSymmetric ? "SYMMETRIC " : "") + (usingAsymmetric ? "ASYMMETRIC " : "")
                 + betweenExpressionStart
                 + " AND "
@@ -120,4 +121,39 @@ public class Between extends ASTNodeAccessImpl implements Expression {
     public <E extends Expression> E getLeftExpression(Class<E> type) {
         return type.cast(getLeftExpression());
     }
+
+    private int oraclePriorPosition = NO_ORACLE_PRIOR;
+
+    @Override
+    public int getOldOracleJoinSyntax() {
+        return NO_ORACLE_JOIN;
+    }
+
+    @Override
+    public void setOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        throw new IllegalArgumentException(
+                "oracle join operator (+) is not supported on this condition");
+    }
+
+    @Override
+    public Between withOldOracleJoinSyntax(int oldOracleJoinSyntax) {
+        setOldOracleJoinSyntax(oldOracleJoinSyntax);
+        return this;
+    }
+
+    @Override
+    public int getOraclePriorPosition() {
+        return oraclePriorPosition;
+    }
+
+    @Override
+    public void setOraclePriorPosition(int oraclePriorPosition) {
+        this.oraclePriorPosition = oraclePriorPosition;
+    }
+
+    public Between withOraclePriorPosition(int oraclePriorPosition) {
+        setOraclePriorPosition(oraclePriorPosition);
+        return this;
+    }
+
 }
