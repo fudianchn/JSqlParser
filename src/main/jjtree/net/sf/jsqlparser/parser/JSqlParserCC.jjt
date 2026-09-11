@@ -8672,6 +8672,15 @@ Expression LikeExpression(Expression leftExpression) #LikeExpression:
     ) { result.setLikeKeyWord( LikeExpression.KeyWord.from(token.image)); }
     [ LOOKAHEAD(2) <K_BINARY> {result.setUseBinary(true); } ]
     rightExpression=SimpleExpression()
+    [
+        LOOKAHEAD("(" "+" ")")
+        "(" "+" ")"
+        {
+            if (rightExpression instanceof Column) {
+                ((Column) rightExpression).setOldOracleJoinSyntax(EqualsTo.ORACLE_JOIN_RIGHT);
+            }
+        }
+    ]
     [ LOOKAHEAD(2) <K_ESCAPE>
         (
             LOOKAHEAD(2)  token = <S_CHAR_LITERAL> { result.setEscape( new StringValue( token.image ) ); }
@@ -8696,6 +8705,15 @@ Expression SimilarToExpression(Expression leftExpression) #SimilarToExpression:
     [<K_NOT> { result.setNot(true); } ]
     <K_SIMILAR> <K_TO>
     rightExpression=SimpleExpression()
+    [
+        LOOKAHEAD("(" "+" ")")
+        "(" "+" ")"
+        {
+            if (rightExpression instanceof Column) {
+                ((Column) rightExpression).setOldOracleJoinSyntax(EqualsTo.ORACLE_JOIN_RIGHT);
+            }
+        }
+    ]
     [ LOOKAHEAD(2) <K_ESCAPE> token=<S_CHAR_LITERAL> { result.setEscape((new StringValue(token.image)).getValue()); }]
     {
         result.setLeftExpression(leftExpression);
